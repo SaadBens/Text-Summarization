@@ -4,11 +4,12 @@ import zipfile
 from textSummarization.logging import logger
 from textSummarization.utils.common import get_size
 from textSummarization.entity import DataIngestionConfig 
+from pathlib import Path
+
 
 class DataIngestion:
     def __init__(self, config: DataIngestionConfig):
         self.config = config
-
 
     
     def download_file(self):
@@ -21,7 +22,6 @@ class DataIngestion:
             #print("file downloaded")
         else:
             logger.info(f"File already exists of size: {get_size(Path(self.config.local_data_file))}")  
-
         
     
     def extract_zip_file(self):

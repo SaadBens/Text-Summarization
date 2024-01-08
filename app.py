@@ -1,45 +1,38 @@
-from fastapi import FastAPI
-import uvicorn
-import sys
-import os
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, HTTPException, Depends
 from starlette.responses import RedirectResponse
-from fastapi.responses import Response
+import uvicorn
+from pydantic import BaseModel
+import os
+from celery import Celery
 from textSummarization.pipeline.prediction import PredictionPipeline
 
-
-text:str = "What is Text Summarization?"
-
 app = FastAPI()
+celery_app = Celery(broker='your_broker_url')
 
-@app.get("/", tags=["authentication"])
+# Pydantic models for request and response
+class PredictionRequest(BaseModel):
+    text: str
+
+class PredictionResponse(BaseModel):
+    summary: str
+
+@app.get("/", include_in_schema=False)
 async def index():
     return RedirectResponse(url="/docs")
 
-
-
-@app.get("/train")
+@app.get("/train", responses={202: {"description": "Accepted: Training started"}})
 async def training():
+    task = celery_app.send_task('train_model')
+    return {"task_id": task.id, "status": "Training started"}
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict_route(request: PredictionRequest):
     try:
-        os.system("python main.py")
-        return Response("Training successful !!")
-
-    except Exception as e:
-        return Response(f"Error Occurred! {e}")
-    
-
-
-
-@app.post("/predict")
-async def predict_route(text):
-    try:
-
         obj = PredictionPipeline()
-        text = obj.predict(text)
-        return text
+        summary = obj.predict(request.text)
+        return PredictionResponse(summary=summary)
     except Exception as e:
-        raise e
-    
+        raise HTTPException(status_code=500, detail=str(e))
 
-if __name__=="__main__":
-    uvicorn.run(app, host="localhost", port=8080)
+if __name__ == "__main__":
+    uvicorn.run(app, host="localhost", port=int(os.getenv("PORT", 8080)))

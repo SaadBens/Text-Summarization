@@ -8,23 +8,32 @@ class DataValiadtion:
 
 
     
-    def validate_all_files_exist(self)-> bool:
+    def validate_dataset(self) -> bool:
         try:
-            validation_status = None
+            dataset = load_from_disk(self.config.local_data_file)
+            
+            # Validate the required files of the dataset
+            all_files = os.listdir(self.config.local_data_file)
+            validation_status_files = all(file in all_files for file in self.config.ALL_REQUIRED_FILES)
 
-            all_files = os.listdir(os.path.join("artifacts","data_ingestion","samsum_dataset"))
+            # Validate the required features of the dataset
+            validation_status_features = all(
+                all(feature in dataset[split].features for feature in self.config.REQUIRED_FEATURES)
+                for split in dataset.keys()
+            )
 
-            for file in all_files:
-                if file not in self.config.ALL_REQUIRED_FILES:
-                    validation_status = False
-                    with open(self.config.STATUS_FILE, 'w') as f:
-                        f.write(f"Validation status: {validation_status}")
-                else:
-                    validation_status = True
-                    with open(self.config.STATUS_FILE, 'w') as f:
-                        f.write(f"Validation status: {validation_status}")
+            # Combine validation statuses
+            final_validation_status = validation_status_files and validation_status_features
+            with open(self.config.STATUS_FILE, 'w') as f:
+                f.write(f"Validation status files: {validation_status_files}, features: {validation_status_features}")
 
-            return validation_status
-        
+            if not final_validation_status:
+                missing_elements = "Missing files or features in dataset."
+                logger.error(missing_elements)
+                raise ValueError(missing_elements)
+
+            return final_validation_status
+
         except Exception as e:
+            logger.error(f"Error in dataset validation: {e}")
             raise e

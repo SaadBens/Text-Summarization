@@ -13,19 +13,20 @@ class DataTransformation:
 
     
     def convert_examples_to_features(self,example_batch):
-        input_encodings = self.tokenizer(example_batch['dialogue'] , max_length = 1024, truncation = True )
+        start_prompt = 'Summarize the following conversation.\n\n'
+        end_prompt = '\n\nSummary: '
+        prompt = [start_prompt + dialogue + end_prompt for dialogue in example_batch["dialogue"]]
+        
+        example_batch['input_ids'] = self.tokenizer(prompt, padding="max_length", truncation=True, return_tensors="pt").input_ids
         
         with self.tokenizer.as_target_tokenizer():
-            target_encodings = self.tokenizer(example_batch['summary'], max_length = 128, truncation = True )
+            example_batch['labels'] = self.tokenizer(example_batch["summary"], padding="max_length", truncation=True, return_tensors="pt").input_ids
             
-        return {
-            'input_ids' : input_encodings['input_ids'],
-            'attention_mask': input_encodings['attention_mask'],
-            'labels': target_encodings['input_ids']
-        }
+        return example_batch
     
 
     def convert(self):
-        dataset_samsum = load_from_disk(self.config.data_path)
-        dataset_samsum_pt = dataset_samsum.map(self.convert_examples_to_features, batched = True)
-        dataset_samsum_pt.save_to_disk(os.path.join(self.config.root_dir,"samsum_dataset"))
+        dataset = load_from_disk(self.config.data_path)
+        tokenized_dataset = dataset.map(self.convert_examples_to_features, batched = True)
+        tokenized_dataset = tokenized_dataset.remove_columns(['id', 'topic', 'dialogue', 'summary',])
+        tokenized_dataset.save_to_disk(os.path.join(self.config.root_dir,"DialogSum"))

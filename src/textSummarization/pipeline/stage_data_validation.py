@@ -9,6 +9,6 @@ class DataValidationTrainingPipeline:
 
     def main(self):
         config = ConfigurationManager()
-        data_validation_config = config.get_data_validation_config()
-        data_validation = DataValiadtion(config=data_validation_config)
-        data_validation.validate_all_files_exist()
+        data_transformation_config = config.get_data_transformation_config()
+        data_transformation = DataTransformation(config=data_transformation_config)
+        data_transformation.convert()

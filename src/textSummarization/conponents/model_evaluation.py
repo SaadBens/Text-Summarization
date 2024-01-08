@@ -23,14 +23,14 @@ class ModelEvaluation:
     
     def calculate_metric_on_test_ds(self,dataset, metric, model, tokenizer, 
                                batch_size=16, device="cuda" if torch.cuda.is_available() else "cpu", 
-                               column_text="article", 
-                               column_summary="highlights"):
+                               column_text="dialogue", 
+                               column_summary="summary"):
         article_batches = list(self.generate_batch_sized_chunks(dataset[column_text], batch_size))
         target_batches = list(self.generate_batch_sized_chunks(dataset[column_summary], batch_size))
 
         for article_batch, target_batch in tqdm(
             zip(article_batches, target_batches), total=len(article_batches)):
-            
+                
             inputs = tokenizer(article_batch, max_length=1024,  truncation=True, 
                             padding="max_length", return_tensors="pt")
             
@@ -60,7 +60,7 @@ class ModelEvaluation:
         tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_path)
         model_pegasus = AutoModelForSeq2SeqLM.from_pretrained(self.config.model_path).to(device)
        
-        # loading data 
+        #loading data 
         dataset_samsum_pt = load_from_disk(self.config.data_path)
 
 

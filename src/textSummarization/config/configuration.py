@@ -21,14 +21,13 @@ class ConfigurationManager:
 
     def get_data_ingestion_config(self) -> DataIngestionConfig:
         config = self.config.data_ingestion
-
+        
         create_directories([config.root_dir])
-
+        
         data_ingestion_config = DataIngestionConfig(
             root_dir=config.root_dir,
-            source_URL=config.source_URL,
-            local_data_file=config.local_data_file,
-            unzip_dir=config.unzip_dir 
+            dataset_name=config.dataset_name,
+            local_data_file=config.local_data_file
         )
 
         return data_ingestion_config
@@ -43,6 +42,8 @@ class ConfigurationManager:
         data_validation_config = DataValidationConfig(
             root_dir=config.root_dir,
             STATUS_FILE=config.STATUS_FILE,
+            local_data_file=config.local_data_file,
+            REQUIRED_FEATURES=config.REQUIRED_FEATURES,
             ALL_REQUIRED_FILES=config.ALL_REQUIRED_FILES,
         )
 
@@ -79,9 +80,8 @@ class ConfigurationManager:
             per_device_train_batch_size = params.per_device_train_batch_size,
             weight_decay = params.weight_decay,
             logging_steps = params.logging_steps,
-            evaluation_strategy = params.evaluation_strategy,
-            eval_steps = params.evaluation_strategy,
-            save_steps = params.save_steps,
+            learning_rate = params.learning_rate,
+            max_steps = params.max_steps,
             gradient_accumulation_steps = params.gradient_accumulation_steps
         )
 
